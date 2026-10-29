@@ -39,8 +39,8 @@
 :root {
   --radius: 1rem;
   /* Paleta do logotipo */
-  --brand: oklch(0.42 0.06 265);        /* azul acinzentado #3D4F70 */
-  --brand-deep: oklch(0.34 0.05 265);
+  --brand: oklch(0.385 0.063 258);        /* azul #3C4C6B */
+  --brand-deep: oklch(0.30 0.053 258);   /* azul escuro derivado de #3C4C6B */
   --ivory: oklch(0.92 0.017 100);       /* marfim #E8E5D8 */
   --mist: oklch(0.73 0.008 250);        /* cinza #A9ACB0 */
 
