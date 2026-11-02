@@ -48,10 +48,17 @@ export type GalleryItem = {
   title?: string;
 };
 
-import galeria1 from "@/assets/galeria-1.jpg";
-import galeria2 from "@/assets/galeria-2.jpg";
-import galeria3 from "@/assets/galeria-3.jpg";
 import galeria4 from "@/assets/galeria-4.mp4";
+import galeria5 from "@/assets/galeria-5.mp4";
+import galeria6 from "@/assets/galeria-6.jpg";
+import galeria7 from "@/assets/galeria-7.mp4";
+import galeria9 from "@/assets/galeria-9.mp4";
+import galeria10 from "@/assets/galeria-10.jpg";
+import galeria11 from "@/assets/galeria-11.jpg";
+import galeria13 from "@/assets/galeria-13.jpg";
+import galeria14 from "@/assets/galeria-14.mp4";
+import galeria15 from "@/assets/galeria-15.jpg";
+import galeria16 from "@/assets/galeria-16.jpg";
 import eventoCasamento from "@/assets/evento-casamento.mp4";
 import eventoDegustacao from "@/assets/evento-degustacao.mp4";
 
@@ -75,22 +82,64 @@ export const gallery: GalleryItem[] = [
     title: "Apresentação & Detalhes",
   },
   {
-    type: "image",
-    src: galeria1,
-    alt: "Canapés finos e mesa de frios",
-    title: "Canapés & Entradas",
+    type: "video",
+    src: galeria5,
+    alt: "Vídeo de evento do JotaJota Buffet",
+    title: "Galeria de Eventos",
   },
   {
     type: "image",
-    src: galeria2,
-    alt: "Mesa de jantar de casamento decorada",
-    title: "Mesa Posta & Decoração",
+    src: galeria6,
+    alt: "Registro de evento do JotaJota Buffet",
+    title: "Momentos Especiais",
+  },
+  {
+    type: "video",
+    src: galeria7,
+    alt: "Vídeo de evento do JotaJota Buffet",
+    title: "Celebrações",
+  },
+  {
+    type: "video",
+    src: galeria9,
+    alt: "Vídeo de evento do JotaJota Buffet",
+    title: "Experiências Únicas",
   },
   {
     type: "image",
-    src: galeria3,
-    alt: "Mesa de doces e bolo de celebração",
-    title: "Mesa de Doces",
+    src: galeria10,
+    alt: "Registro de evento do JotaJota Buffet",
+    title: "Requinte & Sabor",
+  },
+  {
+    type: "image",
+    src: galeria11,
+    alt: "Registro de evento do JotaJota Buffet",
+    title: "Mesa Posta & Detalhes",
+  },
+  {
+    type: "image",
+    src: galeria13,
+    alt: "Registro de evento do JotaJota Buffet",
+    title: "Decoração & Estrutura",
+  },
+  {
+    type: "video",
+    src: galeria14,
+    alt: "Vídeo de evento do JotaJota Buffet",
+    title: "Momentos Inesquecíveis",
+  },
+  {
+    type: "image",
+    src: galeria15,
+    alt: "Registro de evento do JotaJota Buffet",
+    title: "Entradas & Pratos",
+  },
+  {
+    type: "image",
+    src: galeria16,
+    alt: "Registro de evento do JotaJota Buffet",
+    title: "Doces & Celebração",
   },
 ];
 

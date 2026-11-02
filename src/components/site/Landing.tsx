@@ -366,6 +366,13 @@ function Gallery() {
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Arrastar miniaturas com o mouse (drag to scroll)
+  const thumbsRef = useRef<HTMLDivElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftState, setScrollLeftState] = useState(0);
+  const [hasMoved, setHasMoved] = useState(false);
+
   const currentItem = gallery[currentIndex];
 
   const nextSlide = useCallback(() => {
@@ -376,7 +383,7 @@ function Gallery() {
     setCurrentIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
   }, []);
 
-  // Para imagens, avança automaticamente após 5 segundos
+  // Para imagens, avança automaticamente após 5.5 segundos
   useEffect(() => {
     if (currentItem?.type === "image" && isPlaying) {
       const timer = setTimeout(() => {
@@ -397,6 +404,20 @@ function Gallery() {
     }
   }, [currentIndex, isPlaying, currentItem?.type]);
 
+  // Centraliza automaticamente a miniatura ativa
+  useEffect(() => {
+    if (thumbsRef.current && !isDragging) {
+      const activeEl = thumbsRef.current.children[currentIndex] as HTMLElement | undefined;
+      if (activeEl) {
+        activeEl.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
+      }
+    }
+  }, [currentIndex, isDragging]);
+
   const togglePlay = () => {
     if (currentItem?.type === "video" && videoRef.current) {
       if (isPlaying) {
@@ -415,6 +436,35 @@ function Gallery() {
     setIsMuted((prev) => !prev);
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!thumbsRef.current) return;
+    setIsDragging(true);
+    setHasMoved(false);
+    setStartX(e.pageX - thumbsRef.current.offsetLeft);
+    setScrollLeftState(thumbsRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !thumbsRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - thumbsRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    if (Math.abs(walk) > 4) {
+      setHasMoved(true);
+    }
+    thumbsRef.current.scrollLeft = scrollLeftState - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setIsDragging(false);
+  };
+
+  const scrollThumbs = (direction: "left" | "right") => {
+    if (!thumbsRef.current) return;
+    const amount = direction === "left" ? -240 : 240;
+    thumbsRef.current.scrollBy({ left: amount, behavior: "smooth" });
+  };
+
   if (gallery.length === 0) return null;
 
   return (
@@ -428,116 +478,164 @@ function Gallery() {
           </p>
         </div>
 
-      {/* Palco Principal / Visualizador com avanço automático ao fim do vídeo */}
-      <div className="relative mt-12 w-full overflow-hidden rounded-3xl border border-border bg-black shadow-2xl aspect-[16/10] md:aspect-[16/9] max-h-[560px]">
-        {currentItem.type === "video" ? (
-          <video
-            ref={videoRef}
-            key={currentItem.src}
-            src={currentItem.src}
-            autoPlay
-            muted={isMuted}
-            playsInline
-            onEnded={nextSlide}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <img
-            key={currentItem.src}
-            src={currentItem.src}
-            alt={currentItem.alt}
-            className="h-full w-full object-cover transition-opacity duration-700"
-          />
-        )}
+        {/* Moldura Principal Vertical (formato vertical para ver o vídeo e as fotos inteiros sem cortes) */}
+        <div className="relative mx-auto mt-12 w-full max-w-[390px] md:max-w-[430px] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl aspect-[9/16] max-h-[720px] flex items-center justify-center">
+          {currentItem.type === "video" ? (
+            <video
+              ref={videoRef}
+              key={currentItem.src}
+              src={currentItem.src}
+              autoPlay
+              muted={isMuted}
+              playsInline
+              onEnded={nextSlide}
+              className="relative z-0 h-full w-full object-contain"
+            />
+          ) : (
+            <>
+              {/* Fundo com desfoque ambiente suave para fotos */}
+              <div
+                className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 scale-110 pointer-events-none"
+                style={{ backgroundImage: `url(${currentItem.src})` }}
+              />
+              <img
+                key={currentItem.src}
+                src={currentItem.src}
+                alt={currentItem.alt}
+                className="relative z-0 h-full w-full object-contain transition-opacity duration-700"
+              />
+            </>
+          )}
 
-        {/* Gradiente superior com badge de tipo e contador */}
-        <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4 md:p-6 bg-gradient-to-b from-black/70 to-transparent">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3.5 py-1 text-xs font-medium text-white backdrop-blur-md border border-white/10">
-            {currentItem.type === "video" ? "▶ Vídeo" : "📷 Foto"}
-          </span>
-          <span className="text-xs font-medium text-white/80 bg-black/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
-            {currentIndex + 1} / {gallery.length}
-          </span>
-        </div>
-
-        {/* Gradiente inferior com título e controles de áudio/play */}
-        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4 md:p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-          <div>
-            <h3 className="text-xl md:text-2xl font-display text-white">
-              {currentItem.title || currentItem.alt}
-            </h3>
-            <p className="text-xs md:text-sm text-white/70 line-clamp-1">{currentItem.alt}</p>
+          {/* Gradiente superior com badge de tipo e contador */}
+          <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3.5 py-1 text-xs font-medium text-white backdrop-blur-md border border-white/10">
+              {currentItem.type === "video" ? "▶ Vídeo" : "📷 Foto"}
+            </span>
+            <span className="text-xs font-medium text-white/90 bg-black/50 px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
+              {currentIndex + 1} / {gallery.length}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {currentItem.type === "video" && (
+          {/* Gradiente inferior com título e controles de áudio/play */}
+          <div className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-between p-4 md:p-5 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+            <div className="pr-3">
+              <h3 className="text-lg md:text-xl font-display text-white">
+                {currentItem.title || currentItem.alt}
+              </h3>
+              <p className="text-xs text-white/70 line-clamp-1">{currentItem.alt}</p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {currentItem.type === "video" && (
+                <button
+                  onClick={toggleMute}
+                  aria-label={isMuted ? "Ativar som" : "Desativar som"}
+                  className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all hover:bg-white/40"
+                >
+                  {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+                </button>
+              )}
               <button
-                onClick={toggleMute}
-                aria-label={isMuted ? "Ativar som" : "Desativar som"}
-                className="flex size-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all hover:bg-white/40"
+                onClick={togglePlay}
+                aria-label={isPlaying ? "Pausar" : "Reproduzir"}
+                className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all hover:bg-white/40"
               >
-                {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+                {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
               </button>
-            )}
-            <button
-              onClick={togglePlay}
-              aria-label={isPlaying ? "Pausar" : "Reproduzir"}
-              className="flex size-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-all hover:bg-white/40"
-            >
-              {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
-            </button>
+            </div>
           </div>
+
+          {/* Setas de navegação */}
+          <button
+            onClick={prevSlide}
+            aria-label="Item anterior"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 flex size-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/70 hover:scale-105"
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+          <button
+            onClick={nextSlide}
+            aria-label="Próximo item"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 flex size-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/70 hover:scale-105"
+          >
+            <ChevronRight className="size-5" />
+          </button>
         </div>
 
-        {/* Setas de navegação */}
-        <button
-          onClick={prevSlide}
-          aria-label="Item anterior"
-          className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 flex size-11 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-105"
-        >
-          <ChevronLeft className="size-6" />
-        </button>
-        <button
-          onClick={nextSlide}
-          aria-label="Próximo item"
-          className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 flex size-11 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-105"
-        >
-          <ChevronRight className="size-6" />
-        </button>
-      </div>
-
-      {/* Miniaturas (Thumbnails) abaixo do player */}
-      <div className="mt-6 flex gap-3 overflow-x-auto pb-2 scrollbar-none justify-start md:justify-center">
-        {gallery.map((item, idx) => (
+        {/* Miniaturas com arraste de mouse (drag to scroll) e setas laterais */}
+        <div className="relative mt-8 mx-auto max-w-4xl flex items-center gap-2">
           <button
-            key={idx}
-            onClick={() => {
-              setCurrentIndex(idx);
-              setIsPlaying(true);
-            }}
-            aria-label={`Ver ${item.title || item.alt}`}
-            className={`group relative flex-shrink-0 w-24 md:w-28 aspect-video rounded-2xl overflow-hidden border-2 transition-all ${
-              idx === currentIndex
-                ? "border-ivory ring-2 ring-ivory/40 scale-105 shadow-md"
-                : "border-ivory/20 opacity-60 hover:opacity-100 hover:scale-100"
-            }`}
+            type="button"
+            onClick={() => scrollThumbs("left")}
+            aria-label="Rolar miniaturas para esquerda"
+            className="hidden sm:flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
           >
-            {item.type === "video" ? (
-              <video src={item.src} muted playsInline className="h-full w-full object-cover" />
-            ) : (
-              <img src={item.src} alt={item.alt} className="h-full w-full object-cover" />
-            )}
-            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
-            {item.type === "video" && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="rounded-full bg-black/60 p-1 text-white">
-                  <Play className="size-3 fill-white" />
-                </div>
-              </div>
-            )}
+            <ChevronLeft className="size-5" />
           </button>
-        ))}
-      </div>
+
+          <div
+            ref={thumbsRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUpOrLeave}
+            onMouseLeave={handleMouseUpOrLeave}
+            className="flex gap-3 overflow-x-auto py-2 px-1 scrollbar-none cursor-grab active:cursor-grabbing select-none w-full"
+            style={{ scrollBehavior: isDragging ? "auto" : "smooth" }}
+          >
+            {gallery.map((item, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  if (hasMoved) return;
+                  setCurrentIndex(idx);
+                  setIsPlaying(true);
+                }}
+                aria-label={`Ver ${item.title || item.alt}`}
+                className={`group relative flex-shrink-0 w-16 md:w-20 aspect-[9/16] rounded-xl overflow-hidden border-2 transition-all ${
+                  idx === currentIndex
+                    ? "border-ivory ring-2 ring-ivory/40 scale-105 shadow-lg"
+                    : "border-ivory/20 opacity-60 hover:opacity-100 hover:scale-100"
+                }`}
+              >
+                {item.type === "video" ? (
+                  <video
+                    src={item.src}
+                    muted
+                    playsInline
+                    draggable={false}
+                    className="h-full w-full object-cover pointer-events-none"
+                  />
+                ) : (
+                  <img
+                    src={item.src}
+                    alt={item.alt}
+                    draggable={false}
+                    className="h-full w-full object-cover pointer-events-none"
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
+                {item.type === "video" && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="rounded-full bg-black/60 p-1.5 text-white">
+                      <Play className="size-3 fill-white" />
+                    </div>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => scrollThumbs("right")}
+            aria-label="Rolar miniaturas para direita"
+            className="hidden sm:flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+          >
+            <ChevronRight className="size-5" />
+          </button>
+        </div>
       </div>
     </section>
   );
