@@ -404,15 +404,22 @@ function Gallery() {
     }
   }, [currentIndex, isPlaying, currentItem?.type]);
 
-  // Centraliza automaticamente a miniatura ativa
+  // Centraliza automaticamente a miniatura ativa apenas dentro do container (sem mover a página)
+  const isFirstMount = useRef(true);
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
     if (thumbsRef.current && !isDragging) {
-      const activeEl = thumbsRef.current.children[currentIndex] as HTMLElement | undefined;
+      const container = thumbsRef.current;
+      const activeEl = container.children[currentIndex] as HTMLElement | undefined;
       if (activeEl) {
-        activeEl.scrollIntoView({
+        const targetScroll =
+          activeEl.offsetLeft - container.offsetWidth / 2 + activeEl.offsetWidth / 2;
+        container.scrollTo({
+          left: targetScroll,
           behavior: "smooth",
-          inline: "center",
-          block: "nearest",
         });
       }
     }
